@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# mrl - Module Reload Live
+# Use: run from inside workspace/sources/<recipe-name>/
+# Usage: ./mrl.sh
+
+# --- Check environment for TARGET_IP ---
+if [ -z "$TARGET_IP" ]; then
+    echo "❌ ERROR: TARGET_IP environment variable is not set."
+    echo "Set it first: export TARGET_IP=192.168.0.211"
+    exit 1
+fi
+
+# --- Figure out info automatically ---
+RECIPE_NAME="$(basename "$(pwd)")"
+# --- Extract MODULE_NAME from Makefile ---
+if [ ! -f Makefile ]; then
+    echo "❌ ERROR: Makefile not found!"
+    exit 1
+fi
+
+MODULE_NAME="$(grep 'obj-m' Makefile | awk '{print $3}' | sed 's/\.o//')"
+
+# --- Deploy the module ---
+echo "[1/5] Deploying $RECIPE_NAME to $TARGET_IP ..."
+bitbake "$RECIPE_NAME"
+devtool deploy-target "$RECIPE_NAME" "root@$TARGET_IP"
+if [ $? -ne 0 ]; then
+    echo "❌ ERROR: devtool deploy-target failed!"
+    exit 1
+fi
+
+# --- Remove old module ---
+echo "[2/5] Removing old module $MODULE_NAME on target (if loaded)..."
+ssh root@"$TARGET_IP" "
+    if lsmod | grep -q '^$MODULE_NAME'; then
+        echo 'Removing loaded module $MODULE_NAME...'
+        rmmod $MODULE_NAME
+    else
+        echo 'Module $MODULE_NAME not loaded, skipping rmmod.'
+    fi
+"
+
+# --- Reload module ---
+echo "[3/5] Reloading module $MODULE_NAME..."
+ssh root@"$TARGET_IP" "
+    modprobe $MODULE_NAME
+"
+
+# --- Confirm with dmesg ---
+echo "[4/5] Last 10 lines of dmesg:"
+ssh root@"$TARGET_IP" "
+    dmesg | tail -n 10
+"
+
+echo "[5/5] ✅ mrl done for $MODULE_NAME!"
