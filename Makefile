@@ -1,10 +1,13 @@
+# Makefile for fanctrl module
 obj-m += fanctrl.o
 
-all:
-	$(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) modules
+SRC := $(shell pwd)
 
-clean:
-	$(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) clean
+all:
+	$(MAKE) -C $(KERNEL_SRC) M=$(SRC)
 
 modules_install:
-	$(MAKE) -C $(KERNEL_SRC) M=$(shell pwd) modules_install
+	$(MAKE) -C $(KERNEL_SRC) M=$(SRC) modules_install
+
+clean:
+	$(MAKE) -C $(KERNEL_SRC) M=$(SRC) clean
