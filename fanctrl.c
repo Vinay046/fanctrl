@@ -1,31 +1,23 @@
-// fanctrl.c
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/tracepoint.h>
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Your Name");
+MODULE_AUTHOR("Vinay");
 MODULE_DESCRIPTION("Fan Control module with custom tracing");
 MODULE_VERSION("0.1");
 
-/* Define tracepoint system */
+/* Tracepoint setup */
 #undef TRACE_SYSTEM
 #define TRACE_SYSTEM fanctrl
 
-/* 
- * For in-file tracepoints, we need to specify the include path
- * to be the current directory
- */
 #define TRACE_INCLUDE_PATH .
 #define TRACE_INCLUDE_FILE fanctrl
 
-/* 
- * Define the tracepoint before including define_trace.h
- * First we need the tracepoint definition
- */
 #if !defined(_FANCTRL_TP_H) || defined(TRACE_HEADER_MULTI_READ)
 #define _FANCTRL_TP_H
+
+#include <linux/tracepoint.h>
 
 TRACE_EVENT(fanctrl_event,
     TP_PROTO(const char *message),
@@ -41,22 +33,15 @@ TRACE_EVENT(fanctrl_event,
 
 #endif /* _FANCTRL_TP_H */
 
-/* 
- * Now create the tracepoint function
- * This must be done after the tracepoint definition but before the module code
- */
 #define CREATE_TRACE_POINTS
 #include <trace/define_trace.h>
 
-/* Module code starts here */
+/* Actual module code */
 static int __init fanctrl_init(void)
 {
-    printk(KERN_INFO "FanCtrl Module: Initializing\n");
+    pr_info("FanCtrl Module: Initializing\n");
     
-    // Emit a trace event
     trace_fanctrl_event("Module initialized");
-    
-    // Emit another trace event
     trace_fanctrl_event("Hello from fan controller!");
     
     return 0;
@@ -64,7 +49,7 @@ static int __init fanctrl_init(void)
 
 static void __exit fanctrl_exit(void)
 {
-    printk(KERN_INFO "FanCtrl Module: Exiting\n");
+    pr_info("FanCtrl Module: Exiting\n");
     trace_fanctrl_event("Module exiting");
 }
 
